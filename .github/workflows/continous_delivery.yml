@@ -1,1 +1,29 @@
+name: CD
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - id: "auth"
+        name: "Authenticate to Google Cloud"
+        uses: "google-github-actions/auth@v1"
+        with:
+          credentials_json: "${{ secrets.GCLOUD_SERVICE_KEY }}"
 
+      - id: "compute-ssh"
+        uses: "google-github-actions/ssh-compute@v0"
+        with:
+          instance_name: "instance-1"
+          zone: "europe-west3-c"
+          user: "vinaykollu"
+          ssh_private_key: "${{ secrets.SSH_KEY }}"
+          command: "sh  /home/vinaykollu/updateDockerCompose.sh"
+      - id: "test"
+        run: |-
+          echo '${{ steps.compute-ssh.outputs.stdout }}'
